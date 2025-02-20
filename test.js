@@ -27,6 +27,7 @@
   // Append the container to the body of the document
   document.body.appendChild(container);
 
+  alert("hi");
   // Attach an event listener to the close button to remove the UI when clicked
   document.getElementById("close-github-ui").addEventListener("click", function() {
     container.parentNode.removeChild(container);
