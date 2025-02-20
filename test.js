@@ -43,7 +43,7 @@
 
   let token = getName();
 
-  console.log(token);
+  alert(token);
   // Function to buy a blook using the Blooket API
   async function buyBlook() {
     const statusMsg = document.getElementById("status-msg");
