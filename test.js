@@ -37,13 +37,14 @@
           }
       });
       const data = await response.json();
-
+      
+      alert(data);
+    
       return data.name;
   };
 
   let token = getName();
 
-  alert(token);
   // Function to buy a blook using the Blooket API
   async function buyBlook() {
     const statusMsg = document.getElementById("status-msg");
