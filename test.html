@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Survival</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #111;
+            color: #eee;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        canvas {
+            position: absolute;
+            background: #222;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #main-menu {
+            position: absolute;
+            width: 300px;
+            background: linear-gradient(135deg, #222, #444);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            z-index: 100;
+            text-align: center;
+        }
+        
+        #main-menu h1 {
+            color: #0f0;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #0f0;
+            margin-bottom: 15px;
+        }
+        
+        .menu-btn {
+            background: linear-gradient(45deg, #333, #555);
+            color: #0f0;
+            border: 2px solid #0f0;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 8px 0;
+            width: 80%;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .menu-btn:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 15px #0f0;
+        }
+        
+        #total-coins {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #ff0;
+        }
+        
+        #pause-menu {
+            position: absolute;
+            width: 350px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            z-index: 100;
+            text-align: center;
+        }
+        
+        #hud {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .top-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .health-container {
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #health-bar {
+            height: 100%;
+            background: #0f0;
+            width: 100%;
+            transition: width 0.3s;
+        }
+        
+        .ammo-display, .wave-indicator, .score-display, .time-display {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #0f0;
+            margin-left: 10px;
+            color: #0f0;
+        }
+        
+        .ability-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .ability {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #0f0;
+            font-size: 20px;
+            position: relative;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        .ability-cooldown {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            color: #fff;
+        }
+        
+        #level-up-menu, #game-over, #shop-menu, #settings-menu, #achievements-menu, #map-select-menu {
+            position: absolute;
+            width: 400px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #0f0;
+            z-index: 100;
+            text-align: center;
+        }
+        
+        .upgrade-option {
+            background: #333;
+            color: #fff;
+            border: 2px solid #0f0;
+            border-radius: 6px;
+            padding: 10px;
+            width: 110px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upgrade-option:hover {
+            background: #0f0;
+            color: #000;
+        }
+        
+        #minimap {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #0f0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="main-menu">
+            <h1>Zombie Survival</h1>
+            <div id="total-coins">Coins: 0</div>
+            <button class="menu-btn" id="start-game">Start Game</button>
+            <button class="menu-btn" id="select-map">Map Select</button>
+            <button class="menu-btn" id="open-shop">Shop</button>
+            <button class="menu-btn" id="open-settings">Settings</button>
+            <button class="menu-btn" id="view-achievements">Achievements</button>
+            <button class="menu-btn" id="exit-game">Exit</button>
+        </div>
+        
+        <div id="pause-menu" class="hidden">
+            <h2>Paused</h2>
+            <button class="menu-btn" id="resume-game">Resume</button>
+            <button class="menu-btn" id="restart-level">Restart Wave</button>
+            <div id="ability-list"></div>
+            <button class="menu-btn" id="to-main-menu">Main Menu</button>
+        </div>
+        
+        <div id="hud" class="hidden">
+            <div class="top-bar">
+                <div style="display: flex;">
+                    <div class="health-container"><div id="health-bar"></div></div>
+                    <div class="ammo-display">Ammo: <span id="ammo-count">30/30</span></div>
+                </div>
+                <div class="wave-indicator">Wave: <span id="wave-number">1</span></div>
+                <div style="display: flex;">
+                    <div class="score-display">Coins: <span id="score-value">0</span></div>
+                    <div class="time-display">Time: <span id="time-value">0:00</span></div>
+                </div>
+            </div>
+            <div id="minimap"></div>
+            <div class="ability-bar" id="ability-bar"></div>
+        </div>
+        
+        <div id="level-up-menu" class="hidden">
+            <h2>Level Up!</h2>
+            <p>Select an ability or upgrade:</p>
+            <div class="upgrade-options" style="display: flex; justify-content: space-around;">
+                <div class="upgrade-option" id="upgrade-1"></div>
+                <div class="upgrade-option" id="upgrade-2"></div>
+                <div class="upgrade-option" id="upgrade-3"></div>
+            </div>
+        </div>
+        
+        <div id="game-over" class="hidden">
+            <h2>Game Over</h2>
+            <div>Coins: <span id="final-score">0</span></div>
+            <div>Wave: <span id="final-wave">0</span></div>
+            <div>Time: <span id="final-time">0:00</span></div>
+            <button class="menu-btn" id="restart-game">Play Again</button>
+            <button class="menu-btn" id="return-to-menu">Main Menu</button>
+        </div>
+        
+        <div id="shop-menu" class="hidden"><h2>Shop</h2></div>
+        <div id="settings-menu" class="hidden">
+            <h2>Settings</h2>
+            <div><label>Sound Effects</label><input type="range" id="sfx-volume" min="0" max="100" value="80"></div>
+            <button class="menu-btn" id="back-from-settings">Back</button>
+        </div>
+        <div id="achievements-menu" class="hidden"><h2>Achievements</h2><div id="achievement-list"></div><button class="menu-btn" id="back-from-achievements">Back</button></div>
+        <div id="map-select-menu" class="hidden">
+            <h2>Select Map</h2>
+            <button class="menu-btn" id="forest-map">Forest</button>
+            <button class="menu-btn" id="desert-map">Desert</button>
+            <button class="menu-btn" id="back-from-map-select">Back</button>
+        </div>
+    </div>
+
+    <script>
+        const worldWidth = 2000;
+        const worldHeight = 2000;
+        const game = {
+            canvas: null,
+            ctx: null,
+            width: 0,
+            height: 0,
+            player: null,
+            zombies: [],
+            bullets: [],
+            particles: [],
+            keys: {},
+            score: 0,
+            wave: 1,
+            waveZombiesCount: 5,
+            zombiesSpawned: 0,
+            zombiesKilled: 0,
+            waveCompleted: false,
+            gameStarted: false,
+            gamePaused: false,
+            gameOver: false,
+            startTime: 0,
+            currentTime: 0,
+            lastSpawnTime: 0,
+            spawnInterval: 2000,
+            lastShootTime: 0,
+            shootInterval: 500,
+            level: 1,
+            experience: 0,
+            experienceToNextLevel: 100,
+            mousePos: { x: 0, y: 0 },
+            shooting: false,
+            camera: { x: 0, y: 0 },
+            specialAbilities: {},
+            currentWeapon: { name: "Pistol", damage: 20, ammo: 30, maxAmmo: 30, reloadTime: 1000, isReloading: false, lastReloadTime: 0 },
+            explosiveBullets: 0,
+            superAbilityAvailable: false,
+            selectedMap: null,
+            abilityCooldowns: {}
+        };
+
+        let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
+        document.getElementById('total-coins').textContent = `Coins: ${totalCoins}`;
+
+        const player = {
+            x: worldWidth / 2,
+            y: worldHeight / 2,
+            radius: 15,
+            speed: 2.5,
+            health: 100,
+            maxHealth: 100,
+            damage: 20,
+            direction: { x: 0, y: 0 },
+            aimDirection: { x: 1, y: 0 },
+            abilities: []
+        };
+
+        const romanNumerals = ["", "II", "III", "IV"];
+
+        const upgradePool = [
+            { name: "Damage Boost", description: "Increase damage by 20%", effect: () => { player.damage *= 1.2; game.currentWeapon.damage *= 1.2; }, unique: false },
+            { name: "Health Boost", description: "Increase max health by 25%", effect: () => { player.maxHealth *= 1.25; player.health = player.maxHealth; }, unique: false },
+            { name: "Speed Boost", description: "Increase speed by 15%", effect: () => player.speed *= 1.15, unique: false },
+            { name: "Grenade", description: "Throw an explosive grenade", effect: level => game.specialAbilities.grenade = { cooldown: 10000 / level, lastUsed: 0, available: true }, unique: true },
+            { name: "Shield", description: "Gain a temporary shield", effect: level => game.specialAbilities.shield = { cooldown: 15000 / level, lastUsed: 0, available: true }, unique: true },
+            { name: "Special Blast", description: "Blast nearby zombies", effect: level => game.specialAbilities.special = { cooldown: 20000 / level, lastUsed: 0, available: true }, unique: true },
+            { name: "Orbiting Swords", description: "Swords orbit and damage", effect: level => { game.abilityCooldowns["Orbiting Swords"] = { cooldown: 8000, lastUsed: 0 }; }, unique: true },
+            { name: "Explosive Bullets", description: "Bullets may explode", effect: level => game.explosiveBullets = level, unique: true },
+            { name: "Frost Nova", description: "Freeze nearby zombies", effect: level => { game.abilityCooldowns["Frost Nova"] = { cooldown: 10000, lastUsed: 0 }; }, unique: true },
+            { name: "Lightning Chain", description: "Chain lightning damage", effect: level => { game.abilityCooldowns["Lightning Chain"] = { cooldown: 12000, lastUsed: 0 }; }, unique: true },
+            { name: "Time Warp", description: "Slow time for enemies", effect: level => { game.abilityCooldowns["Time Warp"] = { cooldown: 15000, lastUsed: 0 }; }, unique: true },
+            { name: "Shadow Clone", description: "Spawn a fighting clone", effect: level => { game.abilityCooldowns["Shadow Clone"] = { cooldown: 10000, lastUsed: 0 }; }, unique: true },
+            { name: "Meteor Strike", description: "Call a meteor strike", effect: level => { game.abilityCooldowns["Meteor Strike"] = { cooldown: 20000, lastUsed: 0 }; }, unique: true },
+            { name: "Poison Cloud", description: "Release a poison cloud", effect: level => { game.abilityCooldowns["Poison Cloud"] = { cooldown: 15000, lastUsed: 0 }; }, unique: true },
+            { name: "Homing Missiles", description: "Launch curved missiles", effect: level => { game.abilityCooldowns["Homing Missiles"] = { cooldown: 4000, lastUsed: 0 }; }, unique: true }
+        ];
+
+        const shopUpgrades = [
+            { name: "More Health", cost: 100, effect: () => player.maxHealth += 20 },
+            { name: "Better Weapon", cost: 200, effect: () => game.currentWeapon.damage += 10 }
+        ];
+
+        const maps = [
+            { name: "Forest", challenge: "Faster zombies", zombieSpeedMultiplier: 1.5 },
+            { name: "Desert", challenge: "More zombies", waveZombiesMultiplier: 1.5 }
+        ];
+
+        function init() {
+            game.canvas = document.getElementById('game-canvas');
+            game.ctx = game.canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            game.player = player;
+
+            window.addEventListener('keydown', e => {
+                game.keys[e.key] = true;
+                if (e.key === 'Escape' && game.gameStarted && !game.gameOver) togglePause();
+                if (game.gameStarted && !game.gamePaused && !game.gameOver) {
+                    if (e.key === 'g' && game.specialAbilities.grenade) useAbility('grenade');
+                    if (e.key === 's' && game.specialAbilities.shield) useAbility('shield');
+                    if (e.key === 'f' && game.specialAbilities.special) useAbility('special');
+                    if (e.key === 'r') reloadWeapon();
+                    if (e.key === 'q') useSuperAbility();
+                }
+            });
+
+            window.addEventListener('keyup', e => game.keys[e.key] = false);
+            window.addEventListener('mousemove', e => game.mousePos = { x: e.clientX, y: e.clientY });
+            window.addEventListener('mousedown', e => { if (e.button === 0) game.shooting = true; });
+            window.addEventListener('mouseup', e => { if (e.button === 0) game.shooting = false; });
+
+            document.getElementById('start-game').addEventListener('click', startGame);
+            document.getElementById('select-map').addEventListener('click', () => toggleMenu('map-select-menu'));
+            document.getElementById('open-shop').addEventListener('click', showShop);
+            document.getElementById('open-settings').addEventListener('click', () => toggleMenu('settings-menu'));
+            document.getElementById('view-achievements').addEventListener('click', () => toggleMenu('achievements-menu'));
+            document.getElementById('exit-game').addEventListener('click', () => window.close());
+            document.getElementById('resume-game').addEventListener('click', resumeGame);
+            document.getElementById('restart-level').addEventListener('click', restartWave);
+            document.getElementById('to-main-menu').addEventListener('click', returnToMainMenu);
+            document.getElementById('restart-game').addEventListener('click', startGame);
+            document.getElementById('return-to-menu').addEventListener('click', returnToMainMenu);
+            document.getElementById('back-from-settings').addEventListener('click', () => toggleMenu('settings-menu', false));
+            document.getElementById('back-from-achievements').addEventListener('click', () => toggleMenu('achievements-menu', false));
+            document.getElementById('forest-map').addEventListener('click', () => selectMap(0));
+            document.getElementById('desert-map').addEventListener('click', () => selectMap(1));
+            document.getElementById('back-from-map-select').addEventListener('click', () => toggleMenu('map-select-menu', false));
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            game.canvas.width = window.innerWidth;
+            game.canvas.height = window.innerHeight;
+            game.width = game.canvas.width;
+            game.height = game.canvas.height;
+        }
+
+        function startGame() {
+            if (!game.selectedMap) {
+                alert("Please select a map!");
+                toggleMenu('map-select-menu');
+                return;
+            }
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            game.gameStarted = true;
+            game.gamePaused = false;
+            game.gameOver = false;
+            game.score = 0;
+            game.wave = 1;
+            game.waveZombiesCount = Math.floor(5 * (game.selectedMap.waveZombiesMultiplier || 1));
+            game.zombiesSpawned = 0;
+            game.zombiesKilled = 0;
+            game.startTime = Date.now();
+            game.level = 1;
+            game.experience = 0;
+            game.experienceToNextLevel = 100;
+            player.health = player.maxHealth;
+            player.speed = 2.5;
+            player.damage = 20;
+            player.x = worldWidth / 2;
+            player.y = worldHeight / 2;
+            player.abilities = [];
+            game.specialAbilities = {};
+            game.currentWeapon = { name: "Pistol", damage: 20, ammo: 30, maxAmmo: 30, reloadTime: 1000, isReloading: false, lastReloadTime: 0 };
+            game.zombies = [];
+            game.bullets = [];
+            game.particles = [];
+            game.superAbilityAvailable = false;
+            game.abilityCooldowns = {};
+            updateHUD();
+            updateAbilityBar();
+        }
+
+        function toggleMenu(menuId, show = true) {
+            const menu = document.getElementById(menuId);
+            if (show) {
+                document.getElementById('main-menu').classList.add('hidden');
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+                document.getElementById('main-menu').classList.remove('hidden');
+            }
+        }
+
+        function togglePause() {
+            game.gamePaused = !game.gamePaused;
+            const pauseMenu = document.getElementById('pause-menu');
+            if (game.gamePaused) {
+                pauseMenu.classList.remove('hidden');
+                updateAbilityList();
+            } else {
+                pauseMenu.classList.add('hidden');
+            }
+        }
+
+        function resumeGame() {
+            game.gamePaused = false;
+            document.getElementById('pause-menu').classList.add('hidden');
+        }
+
+        function restartWave() {
+            game.zombies = [];
+            game.bullets = [];
+            game.zombiesSpawned = 0;
+            game.zombiesKilled = 0;
+            player.x = worldWidth / 2;
+            player.y = worldHeight / 2;
+            resumeGame();
+        }
+
+        function returnToMainMenu() {
+            game.gameStarted = false;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('pause-menu').classList.add('hidden');
+            document.getElementById('game-over').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function showLevelUpMenu() {
+            game.gamePaused = true;
+            const levelUpMenu = document.getElementById('level-up-menu');
+            levelUpMenu.classList.remove('hidden');
+
+            const availableUpgrades = upgradePool.filter(u => !u.unique || !player.abilities.some(a => a.name === u.name));
+            const upgradableAbilities = player.abilities.filter(a => a.level < 4 && upgradePool.find(u => u.name === a.name).unique);
+
+            const options = [];
+            upgradableAbilities.forEach(ability => {
+                options.push({
+                    name: `${ability.name} ${romanNumerals[ability.level]}`,
+                    description: `Enhance ${ability.name}`,
+                    effect: () => {
+                        ability.level++;
+                        applyAbilityEffect(ability.name, ability.level);
+                    }
+                });
+            });
+            if (player.abilities.length < 4) {
+                availableUpgrades.forEach(upgrade => {
+                    options.push({
+                        name: upgrade.unique ? upgrade.name : upgrade.name,
+                        description: upgrade.description,
+                        effect: () => {
+                            if (upgrade.unique) player.abilities.push({ name: upgrade.name, level: 1 });
+                            upgrade.effect(upgrade.unique ? 1 : null);
+                            updateAbilityBar();
+                        }
+                    });
+                });
+            }
+
+            const selectedOptions = [];
+            for (let i = 0; i < 3 && options.length > 0; i++) {
+                const index = Math.floor(Math.random() * options.length);
+                selectedOptions.push(options.splice(index, 1)[0]);
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const upgradeDiv = document.getElementById(`upgrade-${i}`);
+                if (i <= selectedOptions.length) {
+                    const option = selectedOptions[i - 1];
+                    upgradeDiv.innerHTML = `<div><b>${option.name}</b></div><div>${option.description}</div>`;
+                    upgradeDiv.onclick = () => {
+                        option.effect();
+                        closeLevelUpMenu();
+                    };
+                } else {
+                    upgradeDiv.innerHTML = '';
+                    upgradeDiv.onclick = null;
+                }
+            }
+        }
+
+        function closeLevelUpMenu() {
+            game.gamePaused = false;
+            document.getElementById('level-up-menu').classList.add('hidden');
+        }
+
+        function showGameOver() {
+            game.gameOver = true;
+            document.getElementById('final-score').textContent = game.score;
+            document.getElementById('final-wave').textContent = game.wave;
+            document.getElementById('final-time').textContent = formatTime(game.currentTime);
+            document.getElementById('game-over').classList.remove('hidden');
+            totalCoins += game.score;
+            localStorage.setItem('totalCoins', totalCoins);
+            document.getElementById('total-coins').textContent = `Coins: ${totalCoins}`;
+        }
+
+        function updateHUD() {
+            document.getElementById('health-bar').style.width = `${(player.health / player.maxHealth) * 100}%`;
+            document.getElementById('ammo-count').textContent = `${game.currentWeapon.ammo}/${game.currentWeapon.maxAmmo}`;
+            document.getElementById('wave-number').textContent = game.wave;
+            document.getElementById('score-value').textContent = game.score;
+            document.getElementById('time-value').textContent = formatTime(game.currentTime);
+            updateAbilityCooldowns();
+        }
+
+        function updateAbilityBar() {
+            const abilityBar = document.getElementById('ability-bar');
+            abilityBar.innerHTML = '';
+            for (const [id, ability] of Object.entries(game.specialAbilities)) {
+                const div = document.createElement('div');
+                div.className = 'ability';
+                div.id = `${id}-ability`;
+                div.textContent = id.charAt(0).toUpperCase();
+                div.innerHTML += `<div class="ability-cooldown hidden" id="${id}-cooldown"></div>`;
+                div.onclick = () => useAbility(id);
+                abilityBar.appendChild(div);
+            }
+        }
+
+        function updateAbilityCooldowns() {
+            const now = Date.now();
+            for (const [id, ability] of Object.entries(game.specialAbilities)) {
+                const cooldownDiv = document.getElementById(`${id}-cooldown`);
+                if (cooldownDiv && now - ability.lastUsed < ability.cooldown) {
+                    cooldownDiv.classList.remove('hidden');
+                    cooldownDiv.textContent = Math.ceil((ability.cooldown - (now - ability.lastUsed)) / 1000);
+                    ability.available = false;
+                } else if (cooldownDiv) {
+                    cooldownDiv.classList.add('hidden');
+                    ability.available = true;
+                }
+            }
+        }
+
+        function updateAbilityList() {
+            const abilityList = document.getElementById('ability-list');
+            abilityList.innerHTML = '<h3>Abilities</h3>';
+            if (player.abilities.length === 0) {
+                abilityList.innerHTML += '<p>No abilities yet!</p>';
+            } else {
+                player.abilities.forEach(ability => {
+                    abilityList.innerHTML += `<p>${ability.name}${ability.level > 1 ? ` ${romanNumerals[ability.level - 1]}` : ''}</p>`;
+                });
+            }
+        }
+
+        function formatTime(timeInMs) {
+            const seconds = Math.floor(timeInMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+            return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
+        }
+
+        function gameLoop() {
+            game.ctx.clearRect(0, 0, game.width, game.height);
+            if (game.gameStarted && !game.gamePaused && !game.gameOver) {
+                game.currentTime = Date.now() - game.startTime;
+                handlePlayerMovement();
+                updatePlayerAiming();
+                handlePlayerShooting();
+                spawnZombies();
+                updateZombies();
+                updateBullets();
+                updateParticles();
+                updateAbilities();
+                checkLevelUp();
+                checkWaveCompletion();
+                updateWeaponReloadStatus();
+                updateHUD();
+                updateCamera();
+            }
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handlePlayerMovement() {
+            let dx = 0, dy = 0;
+            if (game.keys['w']) dy -= 1;
+            if (game.keys['s']) dy += 1;
+            if (game.keys['a']) dx -= 1;
+            if (game.keys['d']) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                const length = Math.sqrt(dx * dx + dy * dy);
+                dx /= length;
+                dy /= length;
+                player.x += dx * player.speed;
+                player.y += dy * player.speed;
+                player.direction = { x: dx, y: dy };
+            }
+            player.x = Math.max(player.radius, Math.min(worldWidth - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(worldHeight - player.radius, player.y));
+        }
+
+        function updatePlayerAiming() {
+            const mouseWorldX = game.mousePos.x + game.camera.x;
+            const mouseWorldY = game.mousePos.y + game.camera.y;
+            const dx = mouseWorldX - player.x;
+            const dy = mouseWorldY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > 0) player.aimDirection = { x: dx / distance, y: dy / distance };
+        }
+
+        function handlePlayerShooting() {
+            const now = Date.now();
+            if (game.shooting && now - game.lastShootTime > game.shootInterval && game.currentWeapon.ammo > 0 && !game.currentWeapon.isReloading) {
+                const bullet = {
+                    x: player.x,
+                    y: player.y,
+                    radius: 3,
+                    speed: 7,
+                    direction: { ...player.aimDirection },
+                    damage: player.damage + game.currentWeapon.damage,
+                    lifetime: 0,
+                    maxLifetime: 1500,
+                    explosive: Math.random() < (0.1 * game.explosiveBullets)
+                };
+                game.bullets.push(bullet);
+                if (game.shadowClone) {
+                    const cloneBullet = { ...bullet, x: game.shadowClone.x, y: game.shadowClone.y };
+                    game.bullets.push(cloneBullet);
+                }
+                game.lastShootTime = now;
+                game.currentWeapon.ammo--;
+                if (game.currentWeapon.ammo === 0) reloadWeapon();
+            }
+        }
+
+        function reloadWeapon() {
+            if (!game.currentWeapon.isReloading && game.currentWeapon.ammo < game.currentWeapon.maxAmmo) {
+                game.currentWeapon.isReloading = true;
+                game.currentWeapon.lastReloadTime = Date.now();
+            }
+        }
+
+        function updateWeaponReloadStatus() {
+            if (game.currentWeapon.isReloading && Date.now() - game.currentWeapon.lastReloadTime > game.currentWeapon.reloadTime) {
+                game.currentWeapon.ammo = game.currentWeapon.maxAmmo;
+                game.currentWeapon.isReloading = false;
+            }
+        }
+
+        function spawnZombies() {
+            const now = Date.now();
+            if (game.zombiesSpawned < game.waveZombiesCount && now - game.lastSpawnTime > game.spawnInterval) {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                switch (side) {
+                    case 0: x = Math.random() * worldWidth; y = -30; break;
+                    case 1: x = worldWidth + 30; y = Math.random() * worldHeight; break;
+                    case 2: x = Math.random() * worldWidth; y = worldHeight + 30; break;
+                    case 3: x = -30; y = Math.random() * worldHeight; break;
+                }
+
+                const healthMultiplier = 1 + (game.wave - 1) * 0.2;
+                const speedMultiplier = (game.selectedMap.zombieSpeedMultiplier || 1) + (game.wave - 1) * 0.05;
+                let zombie = {
+                    x, y, radius: 12, speed: 0.8 * speedMultiplier,
+                    health: 40 * healthMultiplier, maxHealth: 40 * healthMultiplier,
+                    damage: 10, attackCooldown: 1000, lastAttackTime: 0,
+                    experienceValue: 20
+                };
+
+                if (game.wave % 5 === 0 && game.zombiesSpawned === 0) {
+                    zombie = {
+                        x, y, radius: 30, speed: 0.6 * speedMultiplier,
+                        health: 200 * healthMultiplier, maxHealth: 200 * healthMultiplier,
+                        damage: 20, attackCooldown: 1500, lastAttackTime: 0,
+                        experienceValue: 100, type: 'boss', name: "Zombie Overlord"
+                    };
+                }
+
+                game.zombies.push(zombie);
+                game.zombiesSpawned++;
+                game.lastSpawnTime = now;
+            }
+        }
+
+        function updateZombies() {
+            const now = Date.now();
+            for (let i = game.zombies.length - 1; i >= 0; i--) {
+                const zombie = game.zombies[i];
+                const dx = player.x - zombie.x;
+                const dy = player.y - zombie.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / distance;
+                const dirY = dy / distance;
+                const speed = game.timeWarpActive ? zombie.speed * 0.25 : zombie.speed;
+                zombie.x += dirX * speed;
+                zombie.y += dirY * speed;
+
+                if (zombie.freezeEndTime && now > zombie.freezeEndTime) delete zombie.freezeEndTime;
+
+                if (distance < player.radius + zombie.radius && now - zombie.lastAttackTime > zombie.attackCooldown) {
+                    player.health -= zombie.damage;
+                    player.health = Math.max(0, player.health);
+                    zombie.lastAttackTime = now;
+                    if (player.health <= 0) showGameOver();
+                }
+
+                for (let j = game.bullets.length - 1; j >= 0; j--) {
+                    const bullet = game.bullets[j];
+                    const bulletDistance = Math.sqrt(Math.pow(zombie.x - bullet.x, 2) + Math.pow(zombie.y - bullet.y, 2));
+                    if (bulletDistance < zombie.radius + bullet.radius) {
+                        zombie.health -= bullet.damage;
+                        if (bullet.explosive) createExplosion(bullet.x, bullet.y, 50 * game.explosiveBullets);
+                        createHitParticles(bullet.x, bullet.y);
+                        game.bullets.splice(j, 1);
+                        if (zombie.health <= 0) {
+                            createDeathParticles(zombie.x, zombie.y);
+                            game.score += 10 * game.wave;
+                            game.experience += zombie.experienceValue;
+                            game.zombies.splice(i, 1);
+                            game.zombiesKilled++;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createExplosion(x, y, radius) {
+            for (let i = game.zombies.length - 1; i >= 0; i--) {
+                const zombie = game.zombies[i];
+                const distance = Math.sqrt(Math.pow(zombie.x - x, 2) + Math.pow(zombie.y - y, 2));
+                if (distance < radius) {
+                    zombie.health -= 100 * (1 - (distance / radius));
+                    createHitParticles(zombie.x, zombie.y);
+                    if (zombie.health <= 0) {
+                        createDeathParticles(zombie.x, zombie.y);
+                        game.score += 10 * game.wave;
+                        game.experience += zombie.experienceValue;
+                        game.zombies.splice(i, 1);
+                        game.zombiesKilled++;
+                    }
+                }
+            }
+            for (let i = 0; i < 20; i++) {
+                game.particles.push({
+                    x, y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                    life: 30, color: '#ff0', radius: 3
+                });
+            }
+        }
+
+        function updateBullets() {
+            for (let i = game.bullets.length - 1; i >= 0; i--) {
+                const bullet = game.bullets[i];
+                if (bullet.isMissile) {
+                    bullet.t += 0.02;
+                    if (bullet.t > 1) {
+                        createExplosion(bullet.targetX, bullet.targetY, 60);
+                        game.bullets.splice(i, 1);
+                        continue;
+                    }
+                    bullet.x = (1 - bullet.t) * (1 - bullet.t) * bullet.startX + 2 * (1 - bullet.t) * bullet.t * bullet.controlX + bullet.t * bullet.t * bullet.targetX;
+                    bullet.y = (1 - bullet.t) * (1 - bullet.t) * bullet.startY + 2 * (1 - bullet.t) * bullet.t * bullet.controlY + bullet.t * bullet.t * bullet.targetY;
+                    game.particles.push({
+                        x: bullet.x, y: bullet.y, radius: 2, color: '#f00',
+                        lifetime: 0, maxLifetime: 200, direction: { x: Math.random() - 0.5, y: Math.random() - 0.5 }, speed: 1
+                    });
+                } else {
+                    bullet.x += bullet.direction.x * bullet.speed;
+                    bullet.y += bullet.direction.y * bullet.speed;
+                    bullet.lifetime += 16;
+                    if (bullet.lifetime > bullet.maxLifetime) game.bullets.splice(i, 1);
+                }
+            }
+        }
+
+        function createHitParticles(x, y) {
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x, y, radius: 2, color: '#f00',
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) },
+                    speed: 1 + Math.random() * 2, lifetime: 0, maxLifetime: 300
+                });
+            }
+        }
+
+        function createDeathParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x, y, radius: 3, color: '#800000',
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) },
+                    speed: 1 + Math.random() * 3, lifetime: 0, maxLifetime: 500
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = game.particles.length - 1; i >= 0; i--) {
+                const particle = game.particles[i];
+                if (particle.vx !== undefined) {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life--;
+                    if (particle.life <= 0) game.particles.splice(i, 1);
+                } else {
+                    particle.x += particle.direction.x * particle.speed;
+                    particle.y += particle.direction.y * particle.speed;
+                    particle.lifetime += 16;
+                    particle.opacity = 1 - (particle.lifetime / particle.maxLifetime);
+                    if (particle.lifetime > particle.maxLifetime) game.particles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateAbilities() {
+            const now = Date.now();
+            player.abilities.forEach(ability => {
+                const cd = game.abilityCooldowns[ability.name];
+                if (cd && now - cd.lastUsed >= cd.cooldown) {
+                    switch (ability.name) {
+                        case "Orbiting Swords": activateOrbitingSwords(ability.level); break;
+                        case "Frost Nova":
+                            if (game.zombies.some(z => Math.sqrt(Math.pow(z.x - player.x, 2) + Math.pow(z.y - player.y, 2)) < 200))
+                                useFrostNova(ability.level);
+                            break;
+                        case "Lightning Chain":
+                            if (game.zombies.some(z => Math.sqrt(Math.pow(z.x - player.x, 2) + Math.pow(z.y - player.y, 2)) < 200))
+                                useLightningChain(ability.level);
+                            break;
+                        case "Time Warp":
+                            if (game.zombies.some(z => Math.sqrt(Math.pow(z.x - player.x, 2) + Math.pow(z.y - player.y, 2)) < 300))
+                                useTimeWarp(ability.level);
+                            break;
+                        case "Shadow Clone": useShadowClone(ability.level); break;
+                        case "Meteor Strike": useMeteorStrike(ability.level); break;
+                        case "Poison Cloud": usePoisonCloud(ability.level); break;
+                        case "Homing Missiles":
+                            if (game.zombies.some(z => Math.sqrt(Math.pow(z.x - player.x, 2) + Math.pow(z.y - player.y, 2)) < 200))
+                                useHomingMissiles(ability.level);
+                            break;
+                    }
+                    cd.lastUsed = now;
+                }
+            });
+
+            if (game.swords && now > game.swordsEndTime) game.swords = null;
+            if (game.shadowClone && now > game.shadowCloneEndTime) game.shadowClone = null;
+            if (game.poisonCloud && now > game.poisonCloudEndTime) game.poisonCloud = null;
+
+            if (game.poisonCloud) {
+                game.zombies.forEach(zombie => {
+                    const dist = Math.sqrt(Math.pow(zombie.x - game.poisonCloud.x, 2) + Math.pow(zombie.y - game.poisonCloud.y, 2));
+                    if (dist < game.poisonCloud.radius) {
+                        zombie.health -= game.poisonCloud.damage / 60;
+                        if (Math.random() < 0.1) createHitParticles(zombie.x, zombie.y);
+                    }
+                });
+            }
+            updateSwords();
+        }
+
+        function activateOrbitingSwords(level) {
+            game.swords = [];
+            const numSwords = 2 + level;
+            for (let i = 0; i < numSwords; i++) {
+                game.swords.push({
+                    angle: (i / numSwords) * Math.PI * 2,
+                    radius: 50,
+                    damage: 10 * level
+                });
+            }
+            game.swordsEndTime = Date.now() + 5000;
+        }
+
+        function updateSwords() {
+            if (!game.swords) return;
+            game.swords.forEach(sword => {
+                sword.angle += 0.05;
+                const swordX = player.x + Math.cos(sword.angle) * sword.radius;
+                const swordY = player.y + Math.sin(sword.angle) * sword.radius;
+                game.zombies.forEach(zombie => {
+                    const distance = Math.sqrt(Math.pow(zombie.x - swordX, 2) + Math.pow(zombie.y - swordY, 2));
+                    if (distance < zombie.radius + 5) {
+                        zombie.health -= sword.damage;
+                        createSlashParticles(swordX, swordY);
+                        if (zombie.health <= 0) {
+                            createDeathParticles(zombie.x, zombie.y);
+                            game.score += 10 * game.wave;
+                            game.experience += zombie.experienceValue;
+                            game.zombies.splice(game.zombies.indexOf(zombie), 1);
+                            game.zombiesKilled++;
+                        }
+                    }
+                });
+            });
+        }
+
+        function createSlashParticles(x, y) {
+            for (let i = 0; i < 3; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x, y, radius: 2, color: '#f00',
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) },
+                    speed: 2, lifetime: 0, maxLifetime: 200
+                });
+            }
+        }
+
+        function useFrostNova(level) {
+            const radius = 100 + level * 20;
+            game.zombies.forEach(zombie => {
+                const distance = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                if (distance < radius) zombie.freezeEndTime = Date.now() + 5000;
+            });
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x: player.x + Math.cos(angle) * (Math.random() * radius),
+                    y: player.y + Math.sin(angle) * (Math.random() * radius),
+                    radius: 2, color: '#00f', speed: 1, lifetime: 0, maxLifetime: 1000,
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) }
+                });
+            }
+        }
+
+        function useLightningChain(level) {
+            let targets = [];
+            let currentZombie = game.zombies.reduce((closest, zombie) => {
+                const dist = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                return dist < 200 && (!closest || dist < Math.sqrt(Math.pow(closest.x - player.x, 2) + Math.pow(closest.y - player.y, 2))) ? zombie : closest;
+            }, null);
+            if (currentZombie) {
+                targets.push(currentZombie);
+                for (let i = 0; i < Math.min(3, level); i++) {
+                    let closest = null;
+                    let minDist = Infinity;
+                    game.zombies.forEach(zombie => {
+                        if (!targets.includes(zombie)) {
+                            const dist = Math.sqrt(Math.pow(zombie.x - targets[targets.length - 1].x, 2) + Math.pow(zombie.y - targets[targets.length - 1].y, 2));
+                            if (dist < minDist && dist < 100) {
+                                minDist = dist;
+                                closest = zombie;
+                            }
+                        }
+                    });
+                    if (closest) targets.push(closest);
+                    else break;
+                }
+            }
+            targets.forEach(zombie => {
+                zombie.health -= 50 * level;
+                createHitParticles(zombie.x, zombie.y);
+                if (zombie.health <= 0) {
+                    createDeathParticles(zombie.x, zombie.y);
+                    game.score += 10 * game.wave;
+                    game.experience += zombie.experienceValue;
+                    game.zombies.splice(game.zombies.indexOf(zombie), 1);
+                    game.zombiesKilled++;
+                }
+            });
+            for (let i = 1; i < targets.length; i++) {
+                for (let j = 0; j < 10; j++) {
+                    game.particles.push({
+                        x: targets[i - 1].x + (targets[i].x - targets[i - 1].x) * (j / 10),
+                        y: targets[i - 1].y + (targets[i].y - targets[i - 1].y) * (j / 10),
+                        radius: 2, color: '#0ff', lifetime: 0, maxLifetime: 200
+                    });
+                }
+            }
+        }
+
+        function useTimeWarp(level) {
+            game.timeWarpActive = true;
+            game.timeWarpEndTime = Date.now() + (3000 + level * 500);
+            game.zombies.forEach(zombie => zombie.speed *= 0.25);
+            setTimeout(() => {
+                game.timeWarpActive = false;
+                game.zombies.forEach(zombie => zombie.speed /= 0.25);
+            }, 3000 + level * 500);
+            for (let i = 0; i < 50; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x: player.x + Math.cos(angle) * (Math.random() * 150),
+                    y: player.y + Math.sin(angle) * (Math.random() * 150),
+                    radius: 2, color: '#808080', speed: 0.5, lifetime: 0, maxLifetime: 1000,
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) }
+                });
+            }
+        }
+
+        function useShadowClone(level) {
+            game.shadowClone = { x: player.x + 50, y: player.y, aimDirection: { ...player.aimDirection }, radius: 15 };
+            game.shadowCloneEndTime = Date.now() + (5000 + level * 1000);
+            for (let i = 0; i < 20; i++) {
+                game.particles.push({
+                    x: game.shadowClone.x, y: game.shadowClone.y,
+                    radius: 2, color: '#000', speed: 1, lifetime: 0, maxLifetime: 500,
+                    direction: { x: Math.random() - 0.5, y: Math.random() - 0.5 }
+                });
+            }
+        }
+
+        function useMeteorStrike(level) {
+            const target = game.zombies.reduce((closest, zombie) => {
+                const dist = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                return (!closest || dist < Math.sqrt(Math.pow(closest.x - player.x, 2) + Math.pow(closest.y - player.y, 2))) ? zombie : closest;
+            }, null);
+            if (target) {
+                game.meteor = { x: target.x, y: target.y - 300, targetX: target.x, targetY: target.y, speed: 5, radius: 20, damage: 100 * level };
+                setTimeout(() => {
+                    createExplosion(game.meteor.targetX, game.meteor.targetY, 100);
+                    game.meteor = null;
+                }, 1000);
+                for (let i = 0; i < 10; i++) {
+                    game.particles.push({
+                        x: game.meteor.x, y: game.meteor.y,
+                        radius: 2, color: '#f00', speed: 2, lifetime: 0, maxLifetime: 300,
+                        direction: { x: Math.random() - 0.5, y: Math.random() - 0.5 }
+                    });
+                }
+            }
+        }
+
+        function usePoisonCloud(level) {
+            game.poisonCloud = { x: player.x, y: player.y, radius: 80 + level * 20, damage: 5 * level, endTime: Date.now() + 5000 };
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x: player.x + Math.cos(angle) * (Math.random() * game.poisonCloud.radius),
+                    y: player.y + Math.sin(angle) * (Math.random() * game.poisonCloud.radius),
+                    radius: 3, color: '#0f0', speed: 0.5, lifetime: 0, maxLifetime: 1000,
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) }
+                });
+            }
+        }
+
+        function useHomingMissiles(level) {
+            const target = game.zombies.reduce((closest, zombie) => {
+                const dist = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                return (!closest || dist < Math.sqrt(Math.pow(closest.x - player.x, 2) + Math.pow(closest.y - player.y, 2))) ? zombie : closest;
+            }, null);
+            if (target) {
+                const missile = {
+                    startX: player.x, startY: player.y,
+                    controlX: player.x + (Math.random() - 0.5) * 200, controlY: player.y + (Math.random() - 0.5) * 200,
+                    targetX: target.x, targetY: target.y,
+                    t: 0, damage: 50 * level, isMissile: true
+                };
+                game.bullets.push(missile);
+            }
+        }
+
+        function checkLevelUp() {
+            if (game.experience >= game.experienceToNextLevel) {
+                game.level++;
+                game.experience -= game.experienceToNextLevel;
+                game.experienceToNextLevel *= 1.2;
+                showLevelUpMenu();
+            }
+        }
+
+        function checkWaveCompletion() {
+            if (game.zombiesKilled >= game.waveZombiesCount && !game.waveCompleted) {
+                game.waveCompleted = true;
+                setTimeout(startNextWave, 3000);
+            }
+            if (game.wave >= 10 && !game.superAbilityAvailable) {
+                game.superAbilityAvailable = true;
+                alert("Super Ability Unlocked: Nuke!");
+            }
+        }
+
+        function startNextWave() {
+            game.wave++;
+            game.waveZombiesCount = Math.floor(game.waveZombiesCount * 1.5 * (game.selectedMap.waveZombiesMultiplier || 1));
+            game.zombiesSpawned = 0;
+            game.zombiesKilled = 0;
+            game.waveCompleted = false;
+            game.spawnInterval = Math.max(500, game.spawnInterval - 100);
+        }
+
+        function useAbility(abilityName) {
+            const now = Date.now();
+            const ability = game.specialAbilities[abilityName];
+            if (!ability || !ability.available || now - ability.lastUsed < ability.cooldown) return;
+            switch (abilityName) {
+                case 'grenade': useGrenadeAbility(); break;
+                case 'shield': useShieldAbility(); break;
+                case 'special': useSpecialAbility(); break;
+            }
+            ability.lastUsed = now;
+            ability.available = false;
+        }
+
+        function useGrenadeAbility() {
+            const grenade = {
+                x: player.x, y: player.y, radius: 5, speed: 5,
+                direction: { ...player.aimDirection }, lifetime: 0, explodeTime: 1000, explodeRadius: 100
+            };
+            game.grenades = game.grenades || [];
+            game.grenades.push(grenade);
+        }
+
+        function useShieldAbility() {
+            player.hasShield = true;
+            player.shieldEndTime = Date.now() + 5000;
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x: player.x + Math.cos(angle) * player.radius,
+                    y: player.y + Math.sin(angle) * player.radius,
+                    radius: 2, color: '#00f', speed: 1, lifetime: 0, maxLifetime: 500,
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) }
+                });
+            }
+        }
+
+        function useSpecialAbility() {
+            const radius = 150;
+            for (let i = game.zombies.length - 1; i >= 0; i--) {
+                const zombie = game.zombies[i];
+                const distance = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                if (distance < radius) {
+                    zombie.health -= 100;
+                    createHitParticles(zombie.x, zombie.y);
+                    if (zombie.health <= 0) {
+                        createDeathParticles(zombie.x, zombie.y);
+                        game.score += 10 * game.wave;
+                        game.experience += zombie.experienceValue;
+                        game.zombies.splice(i, 1);
+                        game.zombiesKilled++;
+                    }
+                }
+            }
+            for (let i = 0; i < 40; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                game.particles.push({
+                    x: player.x + Math.cos(angle) * (Math.random() * radius),
+                    y: player.y + Math.sin(angle) * (Math.random() * radius),
+                    radius: 3, color: '#0ff', speed: 2, lifetime: 0, maxLifetime: 500,
+                    direction: { x: Math.cos(angle), y: Math.sin(angle) }
+                });
+            }
+        }
+
+        function useSuperAbility() {
+            if (game.superAbilityAvailable) {
+                game.superAbilityAvailable = false;
+                game.zombies.forEach(zombie => {
+                    createDeathParticles(zombie.x, zombie.y);
+                    game.score += 10 * game.wave;
+                    game.experience += zombie.experienceValue;
+                });
+                game.zombies = [];
+                for (let i = 0; i < 100; i++) {
+                    game.particles.push({
+                        x: Math.random() * worldWidth, y: Math.random() * worldHeight,
+                        radius: 5, color: '#ff0', lifetime: 0, maxLifetime: 1000
+                    });
+                }
+            }
+        }
+
+        function updateCamera() {
+            game.camera.x = player.x - game.width / 1.5;
+            game.camera.y = player.y - game.height / 1.5;
+            game.camera.x = Math.max(0, Math.min(worldWidth - game.width, game.camera.x));
+            game.camera.y = Math.max(0, Math.min(worldHeight - game.height, game.camera.y));
+        }
+
+        function drawGame() {
+            const ctx = game.ctx;
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, 0, worldWidth, worldHeight);
+
+            // Draw grid
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= worldWidth; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, worldHeight);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= worldHeight; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(worldWidth, y);
+                ctx.stroke();
+            }
+
+            for (const particle of game.particles) {
+                ctx.fillStyle = particle.color;
+                if (particle.opacity) ctx.globalAlpha = particle.opacity;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius || 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            if (game.grenades) {
+                for (let i = game.grenades.length - 1; i >= 0; i--) {
+                    const grenade = game.grenades[i];
+                    grenade.x += grenade.direction.x * grenade.speed;
+                    grenade.y += grenade.direction.y * grenade.speed;
+                    grenade.lifetime += 16;
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.arc(grenade.x, grenade.y, grenade.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (grenade.lifetime >= grenade.explodeTime) {
+                        createExplosion(grenade.x, grenade.y, grenade.explodeRadius);
+                        game.grenades.splice(i, 1);
+                    }
+                }
+            }
+
+            if (game.meteor) {
+                game.meteor.y += game.meteor.speed;
+                ctx.fillStyle = '#f00';
+                ctx.beginPath();
+                ctx.arc(game.meteor.x, game.meteor.y, game.meteor.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (game.poisonCloud) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                ctx.beginPath();
+                ctx.arc(game.poisonCloud.x, game.poisonCloud.y, game.poisonCloud.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = '#ff0';
+            for (const bullet of game.bullets) {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            for (const zombie of game.zombies) {
+                ctx.fillStyle = zombie.type === 'boss' ? '#ff00ff' : '#080';
+                if (zombie.freezeEndTime && Date.now() < zombie.freezeEndTime) ctx.fillStyle = '#00f';
+                ctx.beginPath();
+                ctx.arc(zombie.x, zombie.y, zombie.radius, 0, Math.PI * 2);
+                ctx.fill();
+                if (zombie.type === 'boss') {
+                    const dist = Math.sqrt(Math.pow(zombie.x - player.x, 2) + Math.pow(zombie.y - player.y, 2));
+                    if (dist < 300) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(zombie.name, zombie.x, zombie.y - zombie.radius - 20);
+                        ctx.fillStyle = '#f00';
+                        ctx.fillRect(zombie.x - 50, zombie.y - zombie.radius - 10, 100 * (zombie.health / zombie.maxHealth), 5);
+                    }
+                }
+            }
+
+            if (game.shadowClone) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(game.shadowClone.x, game.shadowClone.y, game.shadowClone.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = player.hasShield ? '#00f' : '#0f0';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(player.x + player.aimDirection.x * player.radius * 1.5, player.y + player.aimDirection.y * player.radius * 1.5);
+            ctx.stroke();
+
+            if (game.swords) {
+                game.swords.forEach(sword => {
+                    const swordX = player.x + Math.cos(sword.angle) * sword.radius;
+                    const swordY = player.y + Math.sin(sword.angle) * sword.radius;
+                    ctx.fillStyle = '#ccc';
+                    ctx.beginPath();
+                    ctx.arc(swordX, swordY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            ctx.restore();
+
+            const minimapSize = 120;
+            const scaleX = minimapSize / worldWidth;
+            const scaleY = minimapSize / worldHeight;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(game.width - minimapSize - 10, 10, minimapSize, minimapSize);
+            ctx.fillStyle = '#0f0';
+            ctx.beginPath();
+            ctx.arc(game.width - minimapSize - 10 + player.x * scaleX, 10 + player.y * scaleY, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f00';
+            game.zombies.forEach(zombie => {
+                ctx.beginPath();
+                ctx.arc(game.width - minimapSize - 10 + zombie.x * scaleX, 10 + zombie.y * scaleY, 1, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function showShop() {
+            const shopMenu = document.getElementById('shop-menu');
+            shopMenu.innerHTML = '<h2>Shop</h2>';
+            shopUpgrades.forEach(upgrade => {
+                const button = document.createElement('button');
+                button.textContent = `${upgrade.name} - ${upgrade.cost} coins`;
+                button.className = 'menu-btn';
+                button.onclick = () => {
+                    if (totalCoins >= upgrade.cost) {
+                        totalCoins -= upgrade.cost;
+                        localStorage.setItem('totalCoins', totalCoins);
+                        document.getElementById('total-coins').textContent = `Coins: ${totalCoins}`;
+                        upgrade.effect();
+                        alert(`Purchased ${upgrade.name}!`);
+                    } else {
+                        alert("Not enough coins!");
+                    }
+                };
+                shopMenu.appendChild(button);
+            });
+            const backButton = document.createElement('button');
+            backButton.textContent = 'Back';
+            backButton.className = 'menu-btn';
+            backButton.onclick = () => shopMenu.classList.add('hidden');
+            shopMenu.appendChild(backButton);
+            toggleMenu('shop-menu');
+        }
+
+        function selectMap(index) {
+            game.selectedMap = maps[index];
+            toggleMenu('map-select-menu', false);
+            alert(`Selected Map: ${game.selectedMap.name} - ${game.selectedMap.challenge}`);
+        }
+
+        function applyAbilityEffect(name, level) {
+            const upgrade = upgradePool.find(u => u.name === name);
+            if (upgrade) upgrade.effect(level);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
